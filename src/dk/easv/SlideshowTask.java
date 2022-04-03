@@ -11,18 +11,18 @@ public class SlideshowTask extends Task<Image> {
 
     private List<Image> imageList;
     private int currentImageIndex = 0;
-    private int sleepTime;
+    private int delay;
     private boolean running = true;
 
     public SlideshowTask(List<Image> images, int sleepTime) {
         this.imageList = images;
-        this.sleepTime = sleepTime;
+        this.delay = sleepTime;
     }
 
     @Override
     protected Image call() throws Exception {
         while (running){
-            Thread.sleep(sleep(sleepTime));
+            Thread.sleep(sleep(delay));
             getNextImage();
         }
         return null;
@@ -44,5 +44,9 @@ public class SlideshowTask extends Task<Image> {
 
     public void setRunning(){
         this.running = !running;
+    }
+
+    public void setDelay(int delay){
+        this.delay = delay;
     }
 }

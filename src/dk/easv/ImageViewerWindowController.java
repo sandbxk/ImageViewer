@@ -50,6 +50,9 @@ public class ImageViewerWindowController implements Initializable
 
         sliderImageDuration.valueProperty().addListener((observable, oldValue, newValue) -> {
             lblDurationSeconds.setText(newValue.intValue() + "");
+            delay = newValue.intValue();
+            if (task != null && task.isRunning())
+                task.setDelay(newValue.intValue());
         });
         sliderImageDuration.setValue(3);
     }
@@ -133,12 +136,4 @@ public class ImageViewerWindowController implements Initializable
 
     }
 
-
-    public int onDelaySet(MouseEvent mouseEvent) {
-        Double value = sliderImageDuration.getValue();
-        delay = value.intValue();
-
-        return value.intValue();
-
-    }
 }
