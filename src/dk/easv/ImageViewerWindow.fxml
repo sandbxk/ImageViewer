@@ -112,7 +112,7 @@
    <right>
       <AnchorPane prefHeight="603.0" prefWidth="196.0" BorderPane.alignment="CENTER">
          <children>
-            <AreaChart fx:id="areaChartColors" layoutX="4.0" layoutY="8.0" prefHeight="591.0" prefWidth="263.0" title="Color Chart">
+            <AreaChart fx:id="areaChartColors" layoutY="189.0" maxWidth="-Infinity" minWidth="-Infinity" prefHeight="607.0" prefWidth="316.0" title="Color Chart" AnchorPane.bottomAnchor="5.0" AnchorPane.rightAnchor="0.0">
               <xAxis>
                 <CategoryAxis side="BOTTOM" />
               </xAxis>

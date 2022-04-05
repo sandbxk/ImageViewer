@@ -16,15 +16,12 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.chart.AreaChart;
-import javafx.scene.chart.CategoryAxis;
-import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseEvent;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -39,11 +36,12 @@ public class ImageViewerWindowController implements Initializable
     public Label lblFileName;
     public Button btnStop;
     public Button btnStart;
-    public AreaChart areaChartColors;
+    public AreaChart<String, Number> areaChartColors;
     private IntegerProperty currentImageIndex = new SimpleIntegerProperty(0);
     private int delay = 3;
     private ExecutorService executor;
-    private SlideshowTask task;
+    private SlideshowTask slideshowTask;
+    private ColorChartTask colorChartTask;
 
 
     @FXML
@@ -56,49 +54,47 @@ public class ImageViewerWindowController implements Initializable
     public void initialize(URL location, ResourceBundle resources) {
         btnStop.setDisable(true);
 
-        task = new SlideshowTask(images, delay);
+        slideshowTask = new SlideshowTask(images, delay);
+        colorChartTask = new ColorChartTask(imageView.imageProperty());
 
 
         sliderImageDuration.valueProperty().addListener((observable, oldValue, newValue) -> {
             lblDurationSeconds.setText(newValue.intValue() + "");
             delay = newValue.intValue();
-            if (task != null && task.isRunning())
-                task.setDelay(newValue.intValue());
+            if (slideshowTask != null && slideshowTask.isRunning())
+                slideshowTask.setDelay(newValue.intValue());
         });
         sliderImageDuration.setValue(3);
-        //currentImageIndex.bind(task.getCurrentImageIndexProperty());
-
-        CategoryAxis xAxis = new CategoryAxis(FXCollections.observableArrayList(Arrays.asList("Red", "Red and Green", "Green", "Green and Blue", "Blue", "Blue and Red")));
-        NumberAxis yAxis = new NumberAxis();
-        yAxis.setLabel("Pixels");
 
         areaChartColors.setTitle("Color distribution");
+        areaChartColors.setLegendVisible(false);
+        areaChartColors.getYAxis().setLabel("Pixels");
 
-        currentImageIndex.addListener((observable, oldValue, newValue) -> {
-            areaChartColors.getData().clear();
-            XYChart.Series series = new XYChart.Series();
-            XYChart.Series seriesNames = new XYChart.Series();
-            Map<String, Long> colorMap = task.getColorData();
+        initColorChartTaskListener();
+        initStopTask();
+    }
 
-            ObservableList<Long> colorData = FXCollections.observableArrayList(colorMap.get("Red"),
-                    colorMap.get("Red and Green"), colorMap.get("Green"),
-                    colorMap.get("Green and Blue"), colorMap.get("Blue"), colorMap.get("Blue and Red"));
-            ObservableList<String> colorNames = FXCollections.observableArrayList(colorMap.keySet().stream().toList());
-
-            series.setData(colorData);
-            seriesNames.setData(colorNames);
-
-            areaChartColors.getData().add(new XYChart.Data<>(seriesNames, series));
-        });
-
+    private void initStopTask(){
         Platform.runLater(() -> {
             btnStop.getScene().getWindow().setOnHidden(event -> {
-                if (task.isRunning())
-                    task.setRunning();
+                if (slideshowTask.isRunning()) {
+                    slideshowTask.setRunning();
+                    slideshowTask.cancel();
+                }
             });
         });
     }
 
+    private void initColorChartTaskListener(){
+        executor = Executors.newCachedThreadPool();
+
+        colorChartTask.valueProperty().addListener((observable, oldValue, newValue) -> {
+            areaChartColors.getData().clear();
+            areaChartColors.getData().add(newValue);
+        });
+
+        executor.execute(colorChartTask);
+    }
 
 
     @FXML
@@ -155,7 +151,7 @@ public class ImageViewerWindowController implements Initializable
         btnStop.setDisable(true);
         btnStart.setDisable(false);
 
-        task.setRunning();
+        slideshowTask.setRunning();
         displayImage();
     }
 
@@ -163,21 +159,20 @@ public class ImageViewerWindowController implements Initializable
         btnStop.setDisable(false);
         btnStart.setDisable(true);
 
-        //task = new SlideshowTask(images, delay);
+
         executor = Executors.newCachedThreadPool();
 
-        task.valueProperty().addListener((observable, oldValue, newValue) -> {
+        slideshowTask.valueProperty().addListener((observable, oldValue, newValue) -> {
             imageView.setImage(newValue);
         });
 
-        lblFileName.textProperty().bind(task.messageProperty());
+        lblFileName.textProperty().bind(slideshowTask.messageProperty());
 
-        task.setOnSucceeded((succeededEvent) -> {
+        slideshowTask.setOnSucceeded((succeededEvent) -> {
             displayImage();
         });
 
-        executor.execute(task);
-
+        executor.execute(slideshowTask);
     }
 
 }
