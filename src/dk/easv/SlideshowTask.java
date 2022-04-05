@@ -1,5 +1,7 @@
 package dk.easv;
 
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
 import javafx.concurrent.Task;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
@@ -15,7 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class SlideshowTask extends Task<Image> {
 
     private List<Image> imageList;
-    private int currentImageIndex = 0;
+    private IntegerProperty currentImageIndex = new SimpleIntegerProperty(0);
     private int delay;
     private boolean running = true;
 
@@ -29,7 +31,7 @@ public class SlideshowTask extends Task<Image> {
         while (running){
             Thread.sleep(sleep(delay));
             getNextImage();
-            rgbCountPixelColor();
+            getColorData();
         }
         return null;
     }
@@ -37,8 +39,9 @@ public class SlideshowTask extends Task<Image> {
 
     private void getNextImage() {
         if (!imageList.isEmpty()) {
-            currentImageIndex = (currentImageIndex + 1) % imageList.size();
-            Image image = imageList.get(currentImageIndex);
+            int index = (currentImageIndex.get() + 1) % imageList.size();
+            currentImageIndex.set(index);
+            Image image = imageList.get(currentImageIndex.get());
             updateValue(image);
             updateMessage(new File(image.getUrl()).getName());
         }
@@ -58,7 +61,7 @@ public class SlideshowTask extends Task<Image> {
     }
 
     public void countPixelColor(){
-        Image img = imageList.get(currentImageIndex);
+        Image img = imageList.get(currentImageIndex.get());
         // Read through the pixels and count the number of occurrences of each color.
 
         final PixelReader pr = img.getPixelReader();
@@ -83,15 +86,19 @@ public class SlideshowTask extends Task<Image> {
         System.out.println(dominantCol.toString());
     }
 
-    public void rgbCountPixelColor(){
-        Image img = imageList.get(currentImageIndex);
+    public Map<String, Long> getColorData(){
+        Image img = imageList.get(currentImageIndex.get());
         // Read through the pixels and count the number of occurrences of each color.
 
         final PixelReader pr = img.getPixelReader();
         final Map<Color, Long> redCount = new HashMap<>();
         final Map<Color, Long> greenCount = new HashMap<>();
         final Map<Color, Long> blueCount = new HashMap<>();
+        final Map<Color, Long> redGreenCount = new HashMap<>();
+        final Map<Color, Long> redBlueCount = new HashMap<>();
+        final Map<Color, Long> greenBlueCount = new HashMap<>();
 
+        Map<String, Long> rgbCount = new HashMap<>();
 
         for(int x = 0; x < img.getWidth(); x++) {
             for(int y = 0; y < img.getHeight(); y++) {
@@ -119,6 +126,28 @@ public class SlideshowTask extends Task<Image> {
                         }
                         else blueCount.put(col, 1L);
                     }
+                    case RED_GREEN -> {
+                        if (redGreenCount.containsKey(col))
+                        {
+                            redGreenCount.put(col, redGreenCount.get(col)+1);
+                        }
+                        else redGreenCount.put(col, 1L);
+                    }
+                    case RED_BLUE -> {
+                        if (redBlueCount.containsKey(col))
+                        {
+                            redBlueCount.put(col, redBlueCount.get(col)+1);
+                        }
+                        else redBlueCount.put(col, 1L);
+                    }
+                    case GREEN_BLUE -> {
+                        if (greenBlueCount.containsKey(col))
+                        {
+                            greenBlueCount.put(col, greenBlueCount.get(col)+1);
+                        }
+                        else greenBlueCount.put(col, 1L);
+                    }
+
                     default -> { continue; }
                 }
             }
@@ -133,34 +162,58 @@ public class SlideshowTask extends Task<Image> {
         AtomicLong blueTotalCount = new AtomicLong();
         blueCount.keySet().forEach(color -> blueTotalCount.addAndGet(blueCount.get(color)));
 
+        AtomicLong redGreenTotalCount = new AtomicLong();
+        redGreenCount.keySet().forEach(color -> redGreenTotalCount.addAndGet(redGreenCount.get(color)));
+
+        AtomicLong redBlueTotalCount = new AtomicLong();
+        redBlueCount.keySet().forEach(color -> redBlueTotalCount.addAndGet(redBlueCount.get(color)));
+
+        AtomicLong greenBlueTotalCount = new AtomicLong();
+        greenBlueCount.keySet().forEach(color -> greenBlueTotalCount.addAndGet(greenBlueCount.get(color)));
+
+        rgbCount.put("Red", redTotalCount.get());
+        rgbCount.put("Green", greenTotalCount.get());
+        rgbCount.put("Blue", blueTotalCount.get());
+        rgbCount.put("Red-Green", redGreenTotalCount.get());
+        rgbCount.put("Red-Blue", redBlueTotalCount.get());
+        rgbCount.put("Green-Blue", greenBlueTotalCount.get());
+
         System.out.println("RED: " + redTotalCount + "   GREEN: " + greenTotalCount +  "   BLUE: " + blueTotalCount);
+        return rgbCount;
     }
 
-    private RGB rgbChecker(Color color){
+    private RGB rgbChecker(Color color) {
         double red = color.getRed();
         double green = color.getGreen();
         double blue = color.getBlue();
 
         double[] values = {red, green, blue};
         Arrays.sort(values);
-
-        for (int i = 0; i < values.length; i++) {
-
-        }
+        double maxValue = values[values.length - 1];
 
 
-        if (values[values.length - 1] == red) {
+        if (maxValue == red && maxValue == green) {
+            return RGB.RED_GREEN;
+        } else if (maxValue == red && maxValue == blue) {
+            return RGB.RED_BLUE;
+        } else if (maxValue == green && maxValue == blue) {
+            return RGB.GREEN_BLUE;
+        } else if (maxValue == red) {
             return RGB.RED;
-        } else if (values[values.length - 1] == green) {
+        } else if (maxValue == green) {
             return RGB.GREEN;
-        } else if (values[values.length - 1] == blue) {
+        } else if (maxValue == blue) {
             return RGB.BLUE;
         }
 
-        return null;
+        return RGB.NONE;
     }
 
     private enum RGB{
-        RED, GREEN, BLUE, RED_GREEN, RED_BLUE, GREEN_BLUE;
+        RED, GREEN, BLUE, RED_GREEN, RED_BLUE, GREEN_BLUE, NONE;
+    }
+
+    public IntegerProperty getCurrentImageIndexProperty() {
+        return currentImageIndex;
     }
 }

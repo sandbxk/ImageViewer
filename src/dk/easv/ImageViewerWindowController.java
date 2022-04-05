@@ -2,16 +2,23 @@ package dk.easv;
 
 import java.io.File;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javafx.application.Platform;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
+import javafx.scene.chart.AreaChart;
+import javafx.scene.chart.CategoryAxis;
+import javafx.scene.chart.NumberAxis;
+import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
@@ -32,7 +39,8 @@ public class ImageViewerWindowController implements Initializable
     public Label lblFileName;
     public Button btnStop;
     public Button btnStart;
-    private int currentImageIndex = 0;
+    public AreaChart areaChartColors;
+    private IntegerProperty currentImageIndex = new SimpleIntegerProperty(0);
     private int delay = 3;
     private ExecutorService executor;
     private SlideshowTask task;
@@ -47,10 +55,9 @@ public class ImageViewerWindowController implements Initializable
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         btnStop.setDisable(true);
-        btnStop.getScene().getWindow().setOnHidden(event -> {
-                if (task.isRunning())
-                task.setRunning();
-            });
+
+        task = new SlideshowTask(images, delay);
+
 
         sliderImageDuration.valueProperty().addListener((observable, oldValue, newValue) -> {
             lblDurationSeconds.setText(newValue.intValue() + "");
@@ -59,6 +66,37 @@ public class ImageViewerWindowController implements Initializable
                 task.setDelay(newValue.intValue());
         });
         sliderImageDuration.setValue(3);
+        //currentImageIndex.bind(task.getCurrentImageIndexProperty());
+
+        CategoryAxis xAxis = new CategoryAxis(FXCollections.observableArrayList(Arrays.asList("Red", "Red and Green", "Green", "Green and Blue", "Blue", "Blue and Red")));
+        NumberAxis yAxis = new NumberAxis();
+        yAxis.setLabel("Pixels");
+
+        areaChartColors.setTitle("Color distribution");
+
+        currentImageIndex.addListener((observable, oldValue, newValue) -> {
+            areaChartColors.getData().clear();
+            XYChart.Series series = new XYChart.Series();
+            XYChart.Series seriesNames = new XYChart.Series();
+            Map<String, Long> colorMap = task.getColorData();
+
+            ObservableList<Long> colorData = FXCollections.observableArrayList(colorMap.get("Red"),
+                    colorMap.get("Red and Green"), colorMap.get("Green"),
+                    colorMap.get("Green and Blue"), colorMap.get("Blue"), colorMap.get("Blue and Red"));
+            ObservableList<String> colorNames = FXCollections.observableArrayList(colorMap.keySet().stream().toList());
+
+            series.setData(colorData);
+            seriesNames.setData(colorNames);
+
+            areaChartColors.getData().add(new XYChart.Data<>(seriesNames, series));
+        });
+
+        Platform.runLater(() -> {
+            btnStop.getScene().getWindow().setOnHidden(event -> {
+                if (task.isRunning())
+                    task.setRunning();
+            });
+        });
     }
 
 
@@ -87,8 +125,8 @@ public class ImageViewerWindowController implements Initializable
     {
         if (!images.isEmpty())
         {
-            currentImageIndex =
-                    (currentImageIndex - 1 + images.size()) % images.size();
+            int index = (currentImageIndex.get() - 1 + images.size()) % images.size();
+            currentImageIndex.set(index) ;
             displayImage();
         }
     }
@@ -98,7 +136,8 @@ public class ImageViewerWindowController implements Initializable
     {
         if (!images.isEmpty())
         {
-            currentImageIndex = (currentImageIndex + 1) % images.size();
+            int index = (currentImageIndex.get() + 1) % images.size();
+            currentImageIndex.set(index);
             displayImage();
         }
     }
@@ -107,7 +146,8 @@ public class ImageViewerWindowController implements Initializable
     {
         if (!images.isEmpty())
         {
-            imageView.setImage(images.get(currentImageIndex));
+            imageView.setImage(images.get(currentImageIndex.get()));
+            System.out.println(currentImageIndex.get());
         }
     }
 
@@ -123,7 +163,7 @@ public class ImageViewerWindowController implements Initializable
         btnStop.setDisable(false);
         btnStart.setDisable(true);
 
-        task = new SlideshowTask(images, delay);
+        //task = new SlideshowTask(images, delay);
         executor = Executors.newCachedThreadPool();
 
         task.valueProperty().addListener((observable, oldValue, newValue) -> {
