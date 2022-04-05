@@ -34,6 +34,7 @@ public class SlideshowTask extends Task<Image> {
         return null;
     }
 
+
     private void getNextImage() {
         if (!imageList.isEmpty()) {
             currentImageIndex = (currentImageIndex + 1) % imageList.size();
@@ -119,9 +120,7 @@ public class SlideshowTask extends Task<Image> {
                         else blueCount.put(col, 1L);
                     }
                     default -> { continue; }
-
                 }
-
             }
         }
 
@@ -145,6 +144,11 @@ public class SlideshowTask extends Task<Image> {
         double[] values = {red, green, blue};
         Arrays.sort(values);
 
+        for (int i = 0; i < values.length; i++) {
+
+        }
+
+
         if (values[values.length - 1] == red) {
             return RGB.RED;
         } else if (values[values.length - 1] == green) {
@@ -152,10 +156,11 @@ public class SlideshowTask extends Task<Image> {
         } else if (values[values.length - 1] == blue) {
             return RGB.BLUE;
         }
+
         return null;
     }
 
     private enum RGB{
-        RED, GREEN, BLUE;
+        RED, GREEN, BLUE, RED_GREEN, RED_BLUE, GREEN_BLUE;
     }
 }
