@@ -47,6 +47,10 @@ public class ImageViewerWindowController implements Initializable
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         btnStop.setDisable(true);
+        btnStop.getScene().getWindow().setOnHidden(event -> {
+                if (task.isRunning())
+                task.setRunning();
+            });
 
         sliderImageDuration.valueProperty().addListener((observable, oldValue, newValue) -> {
             lblDurationSeconds.setText(newValue.intValue() + "");
