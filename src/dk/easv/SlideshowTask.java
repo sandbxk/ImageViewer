@@ -28,6 +28,7 @@ public class SlideshowTask extends Task<Image> {
         while (running){
             Thread.sleep(sleep(delay));
             getNextImage();
+            countPixelColor();
         }
         return null;
     }
@@ -56,7 +57,7 @@ public class SlideshowTask extends Task<Image> {
 
     public void countPixelColor(){
         Image img = imageList.get(currentImageIndex);
-// Read through the pixels and count the number of occurrences of each color.
+        // Read through the pixels and count the number of occurrences of each color.
 
         final PixelReader pr = img.getPixelReader();
         final Map<Color, Long> colCount = new HashMap<>();
@@ -69,11 +70,13 @@ public class SlideshowTask extends Task<Image> {
                 } else {
                     colCount.put(col, 1L);
                 }
+
             }
         }
 
-// Get the color with the highest number of occurrences .
+        // Get the color with the highest number of occurrences .
 
         final Color dominantCol = colCount.entrySet().stream().max(Map.Entry.comparingByValue()).get().getKey();
+        System.out.println(dominantCol.toString());
     }
 }
