@@ -12,10 +12,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import static dk.easv.ColorRange.RED;
 
 public class ImageBlockLooper implements Callable<Map<String, Long>> {
-    private double startBlockX;
-    private double startBlockY;
-    private double endBlockX;
-    private double endBlockY;
+    private int startBlockX;
+    private int startBlockY;
+    private int endBlockX;
+    private int endBlockY;
     private PixelReader pixelReader;
     private AtomicLong red;
     private AtomicLong green;
@@ -26,7 +26,7 @@ public class ImageBlockLooper implements Callable<Map<String, Long>> {
     private AtomicLong monochrome;
     private Map<String, Long> result;
 
-    public ImageBlockLooper(double startBlockX, double startBlockY, double endBlockX, double endBlockY, PixelReader pixelReader) {
+    public ImageBlockLooper(int startBlockX, int startBlockY, int endBlockX, int endBlockY, PixelReader pixelReader) {
         this.startBlockX = startBlockX;
         this.startBlockY = startBlockY;
         this.endBlockX = endBlockX;
@@ -45,9 +45,9 @@ public class ImageBlockLooper implements Callable<Map<String, Long>> {
 
     @Override
     public synchronized Map<String, Long> call() {
-        for (double x = startBlockX; x < endBlockX; x++) {
-            for (double y = startBlockY; y < endBlockY; y++) {
-                final Color col = pixelReader.getColor((int) x, (int) y);
+        for (int x = startBlockX; x < endBlockX; x++) {
+            for (int y = startBlockY; y < endBlockY; y++) {
+                final Color col = pixelReader.getColor(x, y);
                 switch (rgbChecker(col)) {
                     case RED -> red.incrementAndGet();
                     case GREEN -> green.incrementAndGet();

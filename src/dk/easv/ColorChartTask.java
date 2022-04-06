@@ -4,11 +4,13 @@ import javafx.beans.property.ObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.chart.XYChart;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.paint.Color;
 
+import java.awt.image.BufferedImage;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
@@ -36,15 +38,11 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
     }
 
     private XYChart.Series<String, Number> getSeriesData(Map<String, Long> colorMap) {
+        //TODO: Separate Series for each color.
         XYChart.Series<String, Number> series = new XYChart.Series<>();
         ObservableList<XYChart.Data<String, Number>> colorData = FXCollections.observableArrayList(colorMap.keySet().stream().map(
                 key -> new XYChart.Data<String, Number>(key, colorMap.get(key))).toList());
-
         series.setData(colorData);
-        //Map<String, Long> map1 = getColorData(imageProperty.get());
-        //Map<String, Long> map2 = getColorData(imageProperty.get());
-        //map1.merge("Red", map2.get("Red"), (a, b) -> a + b);
-
         return series;
     }
 
@@ -52,30 +50,21 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
         // Read through the pixels and count the number of occurrences of each color.
         int threadCount = 16;
 
-        final Map<Color, Long> redCount = new ConcurrentHashMap<>(); // red
-        final Map<Color, Long> greenCount = new ConcurrentHashMap<>(); // green
-        final Map<Color, Long> blueCount = new ConcurrentHashMap<>(); // blue
-        final Map<Color, Long> redGreenCount = new ConcurrentHashMap<>(); // Red and green mix
-        final Map<Color, Long> redBlueCount = new ConcurrentHashMap<>(); // Red and blue mix
-        final Map<Color, Long> greenBlueCount = new ConcurrentHashMap<>(); // Green and blue mix
-        final Map<Color, Long> monochromeCount = new ConcurrentHashMap<>(); // blacks, greys, whites
+        //IDEAS:
+        // https://stackoverflow.com/questions/2190787/dividing-the-image-into-four-equal-parts-in-jai
+        // https://stackoverflow.com/questions/2405898/how-to-split-an-image-into-four-equal-parts-in-java
+        // http://kalanir.blogspot.com/2010/02/how-to-split-image-into-chunks-java.html
 
-        AtomicLong redTotalCount = new AtomicLong();
-        AtomicLong greenTotalCount = new AtomicLong();
-        AtomicLong blueTotalCount = new AtomicLong();
-        AtomicLong redGreenTotalCount = new AtomicLong();
-        AtomicLong redBlueTotalCount = new AtomicLong();
-        AtomicLong greenBlueTotalCount = new AtomicLong();
-        AtomicLong monochromeTotalCount = new AtomicLong();
-
-
-        Map<String, Long> rgbCount = new HashMap<>();
 
         //divides the image size with 8 for 8 blocks.
-        double blockSizeX = img.getWidth() / threadCount;
-        double blockSizeY = img.getHeight() / threadCount;
-        final PixelReader pr = img.getPixelReader();
+        //BufferedImage bufferedImage = SwingFXUtils.fromFXImage(img, null);
+        int width = img.widthProperty().intValue();
+        int height = img.heightProperty().intValue();
 
+        //TODO: Fix lossy double conversion on division - currently loosing pixels.
+        int blockSizeX = Math.round(width / threadCount);
+        int blockSizeY = Math.round(height / threadCount);
+        final PixelReader pr = img.getPixelReader();
 
         List<Callable<Map<String, Long>>> runners = new ArrayList<>();
 
@@ -86,8 +75,21 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
 
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
-        Map<String, Long> totalColorResult = new ConcurrentHashMap<>();
+        Map<String, Long> totalColorResult = new ConcurrentHashMap<>(); //Total result - all results will be merged into this map.
 
+
+        try {
+            Map<String, Long> result = executor.submit(runners.get(0)).get();
+            result.forEach((key, value) ->
+                    totalColorResult.merge(key, value, (v1, v2) -> v1 + v2) );
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+
+        //The results of each thread is added to the total result.
         for (Callable<Map<String, Long>> runner : runners) {
             try {
                 Map<String, Long> result = executor.submit(runner).get();
@@ -98,152 +100,12 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
             }
         }
 
+
         executor.shutdown();
-
-
-        /*runners.parallelStream().forEach(runner -> runner.run());
-
-        for (var runner: runners) {
-            try {
-                runner.wait();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-         */
-
-/*
-        for(int x = 0; x < img.getWidth(); x++) {
-            for(int y = 0; y < img.getHeight(); y++) {
-                final Color col = pr.getColor(x, y);
-
-                switch (rgbChecker(col)){
-                    case RED -> {
-                        if (redCount.containsKey(col))
-                        {
-                            redCount.put(col, redCount.get(col)+1);
-                        }
-                        else redCount.put(col, 1L);
-                    }
-                    case GREEN -> {
-                        if (greenCount.containsKey(col))
-                        {
-                            greenCount.put(col, greenCount.get(col)+1);
-                        }
-                        else greenCount.put(col, 1L);
-                    }
-                    case BLUE -> {
-                        if (blueCount.containsKey(col))
-                        {
-                            blueCount.put(col, blueCount.get(col)+1);
-                        }
-                        else blueCount.put(col, 1L);
-                    }
-                    case RED_GREEN -> {
-                        if (redGreenCount.containsKey(col))
-                        {
-                            redGreenCount.put(col, redGreenCount.get(col)+1);
-                        }
-                        else redGreenCount.put(col, 1L);
-                    }
-                    case RED_BLUE -> {
-                        if (redBlueCount.containsKey(col))
-                        {
-                            redBlueCount.put(col, redBlueCount.get(col)+1);
-                        }
-                        else redBlueCount.put(col, 1L);
-                    }
-                    case GREEN_BLUE -> {
-                        if (greenBlueCount.containsKey(col))
-                        {
-                            greenBlueCount.put(col, greenBlueCount.get(col)+1);
-                        }
-                        else greenBlueCount.put(col, 1L);
-                    }
-                    case MONOCHROME -> {
-                        if (monochromeCount.containsKey(col))
-                        {
-                            monochromeCount.put(col, monochromeCount.get(col)+1);
-                        }
-                        else monochromeCount.put(col, 1L);
-                    }
-
-                    default -> { continue; }
-                }
-            }
-        }
-
- */
-
-        /*while (group.activeCount() > 0) {
-            try {
-                this.wait(100);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-         */
-
-/*
-        redCount.keySet().forEach(color -> redTotalCount.addAndGet(redCount.get(color)));
-
-        greenCount.keySet().forEach(color -> greenTotalCount.addAndGet(greenCount.get(color)));
-
-        blueCount.keySet().forEach(color -> blueTotalCount.addAndGet(blueCount.get(color)));
-
-        redGreenCount.keySet().forEach(color -> redGreenTotalCount.addAndGet(redGreenCount.get(color)));
-
-        redBlueCount.keySet().forEach(color -> redBlueTotalCount.addAndGet(redBlueCount.get(color)));
-
-        greenBlueCount.keySet().forEach(color -> greenBlueTotalCount.addAndGet(greenBlueCount.get(color)));
-
-        monochromeCount.keySet().forEach(color -> monochromeTotalCount.addAndGet(monochromeCount.get(color)));
-
- */
-
-        rgbCount.put("Monochrome", monochromeTotalCount.get());
-        rgbCount.put("Red", redTotalCount.get());
-        rgbCount.put("Red-Green", redGreenTotalCount.get());
-        rgbCount.put("Green", greenTotalCount.get());
-        rgbCount.put("Green-Blue", greenBlueTotalCount.get());
-        rgbCount.put("Blue", blueTotalCount.get());
-        rgbCount.put("Red-Blue", redBlueTotalCount.get());
-
 
         System.out.println("RED: " + totalColorResult.get("Red") + "   GREEN: " + totalColorResult.get("Green") +  "   BLUE: " + totalColorResult.get("Blue"));
         return totalColorResult;
     }
-
-    private ColorRange rgbChecker(Color color) {
-        double red = color.getRed();
-        double green = color.getGreen();
-        double blue = color.getBlue();
-
-        double[] values = {red, green, blue};
-        Arrays.sort(values);
-        double maxValue = values[values.length - 1];
-
-        if (red == green && red == blue){
-            return ColorRange.MONOCHROME;
-        } else if (maxValue == red && maxValue == green) {
-            return ColorRange.RED_GREEN;
-        } else if (maxValue == red && maxValue == blue) {
-            return ColorRange.RED_BLUE;
-        } else if (maxValue == green && maxValue == blue) {
-            return ColorRange.GREEN_BLUE;
-        } else if (maxValue == red) {
-            return ColorRange.RED;
-        } else if (maxValue == green) {
-            return ColorRange.GREEN;
-        } else if (maxValue == blue) {
-            return ColorRange.BLUE;
-        }
-
-        return ColorRange.NONE;
-    }
-
 
     public void setRunning(){
         running = !running;
