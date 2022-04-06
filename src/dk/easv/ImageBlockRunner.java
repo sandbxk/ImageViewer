@@ -16,29 +16,29 @@ public class ImageBlockRunner implements Runnable{
     private double endBlockX;
     private double endBlockY;
     private PixelReader pixelReader;
-    private Map<Color, Long> redMap;
-    private Map<Color, Long> greenMap;
-    private Map<Color, Long> blueMap;
-    private Map<Color, Long> redGreenMap;
-    private Map<Color, Long> redBlueMap;
-    private Map<Color, Long> greenBlueMap;
-    private Map<Color, Long> monochromeMap;
-    private boolean isDone = false;
+    private AtomicLong red;
+    private AtomicLong green;
+    private AtomicLong blue;
+    private AtomicLong redGreen;
+    private AtomicLong redBlue;
+    private AtomicLong greenBlue;
+    private AtomicLong monochrome;
 
 
-    public ImageBlockRunner(double startBlockX, double startBlockY, double endBlockX, double endBlockY, PixelReader pixelReader, Map<Color, Long> redMap, Map<Color, Long> greenMap, Map<Color, Long> blueMap, Map<Color, Long> redGreenMap, Map<Color, Long> redBlueMap, Map<Color, Long> greenBlueMap, Map<Color, Long> monochromeMap) {
+    public ImageBlockRunner(double startBlockX, double startBlockY, double endBlockX, double endBlockY, PixelReader pixelReader, AtomicLong red, AtomicLong green, AtomicLong blue, AtomicLong redGreen, AtomicLong redBlue, AtomicLong greenBlue, AtomicLong monochrome) {
         this.startBlockX = startBlockX;
         this.startBlockY = startBlockY;
         this.endBlockX = endBlockX;
         this.endBlockY = endBlockY;
         this.pixelReader = pixelReader;
-        this.redMap = redMap;
-        this.greenMap = greenMap;
-        this.blueMap = blueMap;
-        this.redGreenMap = redGreenMap;
-        this.redBlueMap = redBlueMap;
-        this.greenBlueMap = greenBlueMap;
-        this.monochromeMap = monochromeMap;
+        this.red = red;
+        this.green = green;
+        this.blue = blue;
+        this.redGreen = redGreen;
+        this.redBlue = redBlue;
+        this.greenBlue = greenBlue;
+        this.monochrome = monochrome;
+
     }
 
 
@@ -48,41 +48,13 @@ public class ImageBlockRunner implements Runnable{
             for (double y = startBlockY; y < endBlockY; y++) {
                 final Color col = pixelReader.getColor((int) x, (int) y);
                 switch (rgbChecker(col)) {
-                    case RED -> {
-                        if (redMap.containsKey(col)) {
-                            redMap.put(col, redMap.get(col) + 1); //Use atomic long instead of map. Skip maps and use atomic longs
-                        } else redMap.put(col, 1L);
-                    }
-                    case GREEN -> {
-                        if (greenMap.containsKey(col)) {
-                            greenMap.put(col, greenMap.get(col) + 1);
-                        } else greenMap.put(col, 1L);
-                    }
-                    case BLUE -> {
-                        if (blueMap.containsKey(col)) {
-                            blueMap.put(col, blueMap.get(col) + 1);
-                        } else blueMap.put(col, 1L);
-                    }
-                    case RED_GREEN -> {
-                        if (redGreenMap.containsKey(col)) {
-                            redGreenMap.put(col, redGreenMap.get(col) + 1);
-                        } else redGreenMap.put(col, 1L);
-                    }
-                    case RED_BLUE -> {
-                        if (redBlueMap.containsKey(col)) {
-                            redBlueMap.put(col, redBlueMap.get(col) + 1);
-                        } else redBlueMap.put(col, 1L);
-                    }
-                    case GREEN_BLUE -> {
-                        if (greenBlueMap.containsKey(col)) {
-                            greenBlueMap.put(col, greenBlueMap.get(col) + 1);
-                        } else greenBlueMap.put(col, 1L);
-                    }
-                    case MONOCHROME -> {
-                        if (monochromeMap.containsKey(col)) {
-                            monochromeMap.put(col, monochromeMap.get(col) + 1);
-                        } else monochromeMap.put(col, 1L);
-                    }
+                    case RED -> red.incrementAndGet();
+                    case GREEN -> green.incrementAndGet();
+                    case BLUE -> blue.incrementAndGet();
+                    case RED_GREEN -> redGreen.incrementAndGet();
+                    case RED_BLUE -> redBlue.incrementAndGet();
+                    case GREEN_BLUE -> greenBlue.incrementAndGet();
+                    case MONOCHROME -> monochrome.incrementAndGet();
 
                     default -> {
                         continue;
@@ -90,9 +62,8 @@ public class ImageBlockRunner implements Runnable{
                 }
             }
         }
-        AtomicLong redTotalCount = new AtomicLong();
-        redMap.keySet().forEach(color -> redTotalCount.addAndGet(redMap.get(color)));
-        System.out.println("Red total count: " + redTotalCount);
+
+        System.out.println("Red total count: " + red);
     }
 
 
@@ -124,8 +95,5 @@ public class ImageBlockRunner implements Runnable{
         return ColorRange.NONE;
     }
 
-    public boolean getIsDone() {
-        return isDone;
-    }
 
 }

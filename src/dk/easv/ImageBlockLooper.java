@@ -1,39 +1,78 @@
 package dk.easv;
 
-import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.paint.Color;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class ImageBlockLooper implements Callable<ColorRange> {
-    private int startBlockX;
-    private int startBlockY;
-    private int endBlockX;
-    private int endBlockY;
-    private Image image;
+import static dk.easv.ColorRange.RED;
+
+public class ImageBlockLooper implements Callable<Map<String, Long>> {
+    private double startBlockX;
+    private double startBlockY;
+    private double endBlockX;
+    private double endBlockY;
     private PixelReader pixelReader;
+    private AtomicLong red;
+    private AtomicLong green;
+    private AtomicLong blue;
+    private AtomicLong redGreen;
+    private AtomicLong redBlue;
+    private AtomicLong greenBlue;
+    private AtomicLong monochrome;
+    private Map<String, Long> result;
 
-    public ImageBlockLooper(int startBlockX, int startBlockY, int endBlockX, int endBlockY, PixelReader pixelReader) {
+    public ImageBlockLooper(double startBlockX, double startBlockY, double endBlockX, double endBlockY, PixelReader pixelReader) {
         this.startBlockX = startBlockX;
         this.startBlockY = startBlockY;
         this.endBlockX = endBlockX;
         this.endBlockY = endBlockY;
         this.pixelReader = pixelReader;
+        this.red = new AtomicLong(0);
+        this.green = new AtomicLong(0);
+        this.blue = new AtomicLong(0);
+        this.redGreen = new AtomicLong(0);
+        this.redBlue = new AtomicLong(0);
+        this.greenBlue = new AtomicLong(0);
+        this.monochrome = new AtomicLong(0);
+        this.result = new HashMap<>();
     }
 
+
     @Override
-    public ColorRange call() throws Exception {
-        for (int x = startBlockX; x < endBlockX; x++) {
-            for (int y = startBlockY; y < endBlockY; y++) {
-                final Color col = pixelReader.getColor(x, y);
-                 ColorRange colorRange = rgbChecker(col);
-                 return colorRange;
+    public synchronized Map<String, Long> call() {
+        for (double x = startBlockX; x < endBlockX; x++) {
+            for (double y = startBlockY; y < endBlockY; y++) {
+                final Color col = pixelReader.getColor((int) x, (int) y);
+                switch (rgbChecker(col)) {
+                    case RED -> red.incrementAndGet();
+                    case GREEN -> green.incrementAndGet();
+                    case BLUE -> blue.incrementAndGet();
+                    case RED_GREEN -> redGreen.incrementAndGet();
+                    case RED_BLUE -> redBlue.incrementAndGet();
+                    case GREEN_BLUE -> greenBlue.incrementAndGet();
+                    case MONOCHROME -> monochrome.incrementAndGet();
+
+                    default -> {}
+                }
             }
         }
-        return ColorRange.NONE;
+
+        System.out.println("Red total count: " + red);
+        result.put("Red", red.get());
+        result.put("Green", green.get());
+        result.put("Blue", blue.get());
+        result.put("Red-Green", redGreen.get());
+        result.put("Red-Blue", redBlue.get());
+        result.put("Green-Blue", greenBlue.get());
+        result.put("Monochrome", monochrome.get());
+        return result;
     }
+
 
     private ColorRange rgbChecker(Color color) {
         double red = color.getRed();
@@ -53,7 +92,7 @@ public class ImageBlockLooper implements Callable<ColorRange> {
         } else if (maxValue == green && maxValue == blue) {
             return ColorRange.GREEN_BLUE;
         } else if (maxValue == red) {
-            return ColorRange.RED;
+            return RED;
         } else if (maxValue == green) {
             return ColorRange.GREEN;
         } else if (maxValue == blue) {
@@ -62,5 +101,6 @@ public class ImageBlockLooper implements Callable<ColorRange> {
 
         return ColorRange.NONE;
     }
+
 
 }
