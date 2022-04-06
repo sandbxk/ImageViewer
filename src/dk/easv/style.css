@@ -1,0 +1,7 @@
+.default-color0.chart-bar { -fx-bar-fill: RED }
+.default-color1.chart-bar { -fx-bar-fill: BLUE }
+.default-color2.chart-bar { -fx-bar-fill: GREEN }
+.default-color3.chart-bar { -fx-bar-fill: YELLOW }
+.default-color4.chart-bar { -fx-bar-fill: MAGENTA }
+.default-color5.chart-bar { -fx-bar-fill: CYAN }
+.default-color6.chart-bar { -fx-bar-fill: BLACK }
