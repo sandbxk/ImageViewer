@@ -16,6 +16,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.chart.AreaChart;
+import javafx.scene.chart.BarChart;
 import javafx.scene.chart.XYChart;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -36,7 +37,7 @@ public class ImageViewerWindowController implements Initializable
     public Label lblFileName;
     public Button btnStop;
     public Button btnStart;
-    public AreaChart<String, Number> areaChartColors;
+    public BarChart<String, Number> chartColors;
     private IntegerProperty currentImageIndex = new SimpleIntegerProperty(0);
     private int delay = 3;
     private ExecutorService executor;
@@ -66,9 +67,9 @@ public class ImageViewerWindowController implements Initializable
         });
         sliderImageDuration.setValue(3);
 
-        areaChartColors.setTitle("Color distribution");
-        areaChartColors.setLegendVisible(false);
-        areaChartColors.getYAxis().setLabel("Pixels");
+        chartColors.setTitle("Color distribution");
+        chartColors.setLegendVisible(false);
+        chartColors.getYAxis().setLabel("Pixels");
 
         initColorChartTaskListener();
         initStopTask();
@@ -89,8 +90,8 @@ public class ImageViewerWindowController implements Initializable
         executor = Executors.newCachedThreadPool();
 
         colorChartTask.valueProperty().addListener((observable, oldValue, newValue) -> {
-            areaChartColors.getData().clear();
-            areaChartColors.getData().add(newValue);
+            chartColors.getData().clear();
+            chartColors.getData().add(newValue);
         });
 
         executor.execute(colorChartTask);
@@ -143,6 +144,7 @@ public class ImageViewerWindowController implements Initializable
         if (!images.isEmpty())
         {
             imageView.setImage(images.get(currentImageIndex.get()));
+            //lblFileName.setText(new File(images.get(currentImageIndex.get()).getUrl()).getName());
             System.out.println(currentImageIndex.get());
         }
     }

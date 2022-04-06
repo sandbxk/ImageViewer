@@ -46,18 +46,20 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
     }
 
     public Map<String, Long> getColorData(Image img){
-        //Image img = imageList.get(currentImageIndex.get());
         // Read through the pixels and count the number of occurrences of each color.
 
-        final PixelReader pr = img.getPixelReader();
         final Map<Color, Long> redCount = new HashMap<>(); // red
         final Map<Color, Long> greenCount = new HashMap<>(); // green
         final Map<Color, Long> blueCount = new HashMap<>(); // blue
         final Map<Color, Long> redGreenCount = new HashMap<>(); // Red and green mix
         final Map<Color, Long> redBlueCount = new HashMap<>(); // Red and blue mix
         final Map<Color, Long> greenBlueCount = new HashMap<>(); // Green and blue mix
+        final Map<Color, Long> monochromeCount = new HashMap<>(); // blacks, greys, whites
+
 
         Map<String, Long> rgbCount = new HashMap<>();
+
+        final PixelReader pr = img.getPixelReader();
 
         for(int x = 0; x < img.getWidth(); x++) {
             for(int y = 0; y < img.getHeight(); y++) {
@@ -106,7 +108,14 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
                         }
                         else greenBlueCount.put(col, 1L);
                     }
-
+                    case MONOCHROME -> {
+                        if (monochromeCount.containsKey(col))
+                        {
+                            monochromeCount.put(col, monochromeCount.get(col)+1);
+                        }
+                        else monochromeCount.put(col, 1L);
+                    }
+                    
                     default -> { continue; }
                 }
             }
@@ -130,12 +139,17 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
         AtomicLong greenBlueTotalCount = new AtomicLong();
         greenBlueCount.keySet().forEach(color -> greenBlueTotalCount.addAndGet(greenBlueCount.get(color)));
 
+        AtomicLong monochromeTotalCount = new AtomicLong();
+        monochromeCount.keySet().forEach(color -> monochromeTotalCount.addAndGet(monochromeCount.get(color)));
+
+        rgbCount.put("Monochrome", monochromeTotalCount.get());
         rgbCount.put("Red", redTotalCount.get());
         rgbCount.put("Red-Green", redGreenTotalCount.get());
         rgbCount.put("Green", greenTotalCount.get());
         rgbCount.put("Green-Blue", greenBlueTotalCount.get());
         rgbCount.put("Blue", blueTotalCount.get());
         rgbCount.put("Red-Blue", redBlueTotalCount.get());
+
 
         System.out.println("RED: " + redTotalCount + "   GREEN: " + greenTotalCount +  "   BLUE: " + blueTotalCount);
         return rgbCount;
@@ -150,8 +164,9 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
         Arrays.sort(values);
         double maxValue = values[values.length - 1];
 
-
-        if (maxValue == red && maxValue == green) {
+        if (red == green && red == blue){
+            return RGB.MONOCHROME;
+        } else if (maxValue == red && maxValue == green) {
             return RGB.RED_GREEN;
         } else if (maxValue == red && maxValue == blue) {
             return RGB.RED_BLUE;
@@ -169,7 +184,7 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
     }
 
     private enum RGB{
-        RED, GREEN, BLUE, RED_GREEN, RED_BLUE, GREEN_BLUE, NONE;
+        RED, GREEN, BLUE, RED_GREEN, RED_BLUE, GREEN_BLUE, MONOCHROME, NONE;
     }
 
     public void setRunning(){

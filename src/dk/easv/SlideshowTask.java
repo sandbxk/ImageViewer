@@ -42,7 +42,7 @@ public class SlideshowTask extends Task<Image> {
             currentImageIndex.set(index);
             Image image = imageList.get(currentImageIndex.get());
             updateValue(image);
-            updateMessage(new File(image.getUrl()).getName());
+            updateMessage(new File (image.getUrl()).getName());
         }
     }
 
