@@ -9,9 +9,8 @@ import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
 import javafx.scene.paint.Color;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
@@ -42,8 +41,8 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
                 key -> new XYChart.Data<String, Number>(key, colorMap.get(key))).toList());
 
         series.setData(colorData);
-        Map<String, Long> map1 = getColorData(imageProperty.get());
-        Map<String, Long> map2 = getColorData(imageProperty.get());
+        //Map<String, Long> map1 = getColorData(imageProperty.get());
+        //Map<String, Long> map2 = getColorData(imageProperty.get());
         //map1.merge("Red", map2.get("Red"), (a, b) -> a + b);
 
         return series;
@@ -51,21 +50,61 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
 
     public Map<String, Long> getColorData(Image img){
         // Read through the pixels and count the number of occurrences of each color.
+        int threadCount = 16;
 
-        final Map<Color, Long> redCount = new HashMap<>(); // red
-        final Map<Color, Long> greenCount = new HashMap<>(); // green
-        final Map<Color, Long> blueCount = new HashMap<>(); // blue
-        final Map<Color, Long> redGreenCount = new HashMap<>(); // Red and green mix
-        final Map<Color, Long> redBlueCount = new HashMap<>(); // Red and blue mix
-        final Map<Color, Long> greenBlueCount = new HashMap<>(); // Green and blue mix
-        final Map<Color, Long> monochromeCount = new HashMap<>(); // blacks, greys, whites
+        final Map<Color, Long> redCount = new ConcurrentHashMap<>(); // red
+        final Map<Color, Long> greenCount = new ConcurrentHashMap<>(); // green
+        final Map<Color, Long> blueCount = new ConcurrentHashMap<>(); // blue
+        final Map<Color, Long> redGreenCount = new ConcurrentHashMap<>(); // Red and green mix
+        final Map<Color, Long> redBlueCount = new ConcurrentHashMap<>(); // Red and blue mix
+        final Map<Color, Long> greenBlueCount = new ConcurrentHashMap<>(); // Green and blue mix
+        final Map<Color, Long> monochromeCount = new ConcurrentHashMap<>(); // blacks, greys, whites
 
 
         Map<String, Long> rgbCount = new HashMap<>();
 
+        //divides the image size with 8 for 8 blocks.
+        double blockSizeX = img.getWidth()/threadCount;
+        double blockSizeY = img.getHeight()/threadCount;
         final PixelReader pr = img.getPixelReader();
 
-       
+
+        List<Thread> runners = new ArrayList<>();
+        ThreadGroup group = new ThreadGroup("group");
+
+        for (int i = 0; i < threadCount; i++) {
+            ImageBlockRunner runnable = new ImageBlockRunner(blockSizeX*i, blockSizeY*i, blockSizeX*(i+1), blockSizeY*(i+1), pr, redCount, greenCount, blueCount, redGreenCount, redBlueCount, greenBlueCount, monochromeCount);
+            runners.add(new Thread(group, runnable));
+        }
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+
+        for (Thread runner : runners) {
+            executor.execute(runner);
+            /*try {
+                runner.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+             */
+        }
+
+        executor.shutdown();
+
+
+        /*runners.parallelStream().forEach(runner -> runner.run());
+
+        for (var runner: runners) {
+            try {
+                runner.wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+         */
+
+/*
         for(int x = 0; x < img.getWidth(); x++) {
             for(int y = 0; y < img.getHeight(); y++) {
                 final Color col = pr.getColor(x, y);
@@ -126,6 +165,16 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
             }
         }
 
+ */
+
+        while (group.activeCount() > 0) {
+            try {
+                this.wait(100);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
         AtomicLong redTotalCount = new AtomicLong();
         redCount.keySet().forEach(color -> redTotalCount.addAndGet(redCount.get(color)));
 
@@ -160,7 +209,7 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
         return rgbCount;
     }
 
-    private RGB rgbChecker(Color color) {
+    private ColorRange rgbChecker(Color color) {
         double red = color.getRed();
         double green = color.getGreen();
         double blue = color.getBlue();
@@ -170,27 +219,24 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
         double maxValue = values[values.length - 1];
 
         if (red == green && red == blue){
-            return RGB.MONOCHROME;
+            return ColorRange.MONOCHROME;
         } else if (maxValue == red && maxValue == green) {
-            return RGB.RED_GREEN;
+            return ColorRange.RED_GREEN;
         } else if (maxValue == red && maxValue == blue) {
-            return RGB.RED_BLUE;
+            return ColorRange.RED_BLUE;
         } else if (maxValue == green && maxValue == blue) {
-            return RGB.GREEN_BLUE;
+            return ColorRange.GREEN_BLUE;
         } else if (maxValue == red) {
-            return RGB.RED;
+            return ColorRange.RED;
         } else if (maxValue == green) {
-            return RGB.GREEN;
+            return ColorRange.GREEN;
         } else if (maxValue == blue) {
-            return RGB.BLUE;
+            return ColorRange.BLUE;
         }
 
-        return RGB.NONE;
+        return ColorRange.NONE;
     }
 
-    private enum RGB{
-        RED, GREEN, BLUE, RED_GREEN, RED_BLUE, GREEN_BLUE, MONOCHROME, NONE;
-    }
 
     public void setRunning(){
         running = !running;
