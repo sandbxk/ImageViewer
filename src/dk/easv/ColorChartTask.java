@@ -42,6 +42,10 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
                 key -> new XYChart.Data<String, Number>(key, colorMap.get(key))).toList());
 
         series.setData(colorData);
+        Map<String, Long> map1 = getColorData(imageProperty.get());
+        Map<String, Long> map2 = getColorData(imageProperty.get());
+        //map1.merge("Red", map2.get("Red"), (a, b) -> a + b);
+
         return series;
     }
 
@@ -61,6 +65,7 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
 
         final PixelReader pr = img.getPixelReader();
 
+       
         for(int x = 0; x < img.getWidth(); x++) {
             for(int y = 0; y < img.getHeight(); y++) {
                 final Color col = pr.getColor(x, y);
@@ -115,7 +120,7 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
                         }
                         else monochromeCount.put(col, 1L);
                     }
-                    
+
                     default -> { continue; }
                 }
             }
