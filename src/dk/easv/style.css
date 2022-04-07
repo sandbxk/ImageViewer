@@ -25,6 +25,13 @@
     -fx-text-fill: #f8f8f8;
 }
 
+.chart-vertical-grid-lines {
+    -fx-stroke: #707070;
+}
+.chart-horizontal-grid-lines {
+    -fx-stroke: #707070;
+}
+
 
 
 .button {
