@@ -64,11 +64,11 @@ public class ImageBlockLooper implements Callable<Map<String, Long>> {
 
         System.out.println("Red total count: " + red);
         result.put("Red", red.get());
-        result.put("Green", green.get());
-        result.put("Blue", blue.get());
         result.put("Yellow", redGreen.get());
-        result.put("Magenta", redBlue.get());
+        result.put("Green", green.get());
         result.put("Cyan", greenBlue.get());
+        result.put("Blue", blue.get());
+        result.put("Magenta", redBlue.get());
         result.put("Monochrome", monochrome.get());
         return result;
     }

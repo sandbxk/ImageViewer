@@ -23,6 +23,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.FileChooser.ExtensionFilter;
 import javafx.stage.Stage;
@@ -70,7 +71,8 @@ public class ImageViewerWindowController implements Initializable
 
         chartColors.setTitle("Color distribution");
         chartColors.setLegendVisible(false);
-        chartColors.getYAxis().setLabel("Pixels");
+        chartColors.getYAxis().setLabel("%Pixels");
+        chartColors.getXAxis().setLabel("Color");
 
         initColorChartTaskListener();
         initStopTask();
@@ -93,9 +95,16 @@ public class ImageViewerWindowController implements Initializable
         colorChartTask.valueProperty().addListener((observable, oldValue, newValue) -> {
             chartColors.getData().clear();
             chartColors.setData(newValue);
+            setBarChartWidth();
         });
 
         executor.execute(colorChartTask);
+    }
+
+    private void setBarChartWidth(){
+        chartColors.setBarGap(0);
+        chartColors.setCategoryGap(0);
+
     }
 
 

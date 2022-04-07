@@ -1,12 +1,19 @@
 package dk.easv;
 
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
+import javafx.geometry.Bounds;
+import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.chart.XYChart;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
+import javafx.scene.text.Text;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -34,22 +41,35 @@ public class ColorChartTask extends Task<ObservableList<XYChart.Series<String, N
         return null;
     }
 
-    private ObservableList<XYChart.Series<String, Number>> getSeriesData(Map<String, Long> colorMap) {
-        BigInteger totalcount = BigInteger.valueOf(0);
-        for (Long count : colorMap.values()) {
-            totalcount = totalcount.add(BigInteger.valueOf(count));
-        }
-
+    private ObservableList<XYChart.Series<String, Number>> getSeriesData(Map<String, Long> colorMap)
+    {
 
         ObservableList<XYChart.Series<String, Number>> series = FXCollections.observableArrayList();
-        for (Map.Entry<String, Long> entry : colorMap.entrySet()) {
+
+        // Total number of pixels
+        long totalCount = 0;
+        for (Long count : colorMap.values()) {
+            totalCount += count;
+        }
+
+        // Valid keys for the color map
+        String colors[] = {"Red", "Yellow", "Green", "Cyan", "Blue", "Magenta", "Monochrome"};
+
+
+        for (int i = 0; i < colors.length; i++) {
             XYChart.Series<String, Number> seriesData = new XYChart.Series<>();
-            seriesData.getData().add(new XYChart.Data<>(entry.getKey(), entry.getValue()));
+            Long value = colorMap.get(colors[i]);
+            // Overflow-safe calculation of percentage:
+            // The 100.0 forces floating-point math from that point on, and the + 0.5 rounds to the nearest integer instead of truncating.
+            Double percentage = Double.valueOf( (value * 100.0 / totalCount + 0.5) );
+
+            seriesData.getData().add(new XYChart.Data<>(colors[i], percentage));
             series.add(seriesData);
         }
 
         return series;
     }
+
 
     /**
      * Returns a map of colors and their number of occurrences.

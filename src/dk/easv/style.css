@@ -1,17 +1,17 @@
 .default-color0.chart-bar { -fx-bar-fill: RED }
-.default-color1.chart-bar { -fx-bar-fill: BLUE }
+.default-color1.chart-bar { -fx-bar-fill: YELLOW }
 .default-color2.chart-bar { -fx-bar-fill: GREEN }
-.default-color3.chart-bar { -fx-bar-fill: YELLOW }
-.default-color4.chart-bar { -fx-bar-fill: MAGENTA }
-.default-color5.chart-bar { -fx-bar-fill: CYAN }
-.default-color6.chart-bar { -fx-bar-fill: BLACK }
+.default-color3.chart-bar { -fx-bar-fill: CYAN }
+.default-color4.chart-bar { -fx-bar-fill: BLUE }
+.default-color5.chart-bar { -fx-bar-fill: MAGENTA }
+.default-color6.chart-bar { -fx-bar-fill: LIGHTGRAY }
 
 .axis {
     -fx-font-size: 1.4em;
     -fx-tick-label-fill: #f8f8f8;
     -fx-font-family: "Arial";
     -fx-tick-length: 20;
-    -fx-minor-tick-length: 10;
+    -fx-minor-tick-length: 0;
 }
 
 .chart-plot-background {
@@ -47,12 +47,12 @@
 
 .button:hover, button:hover:pressed {
     -fx-background-color: #303030;
-    -fx-border-color: linear-gradient(red, green, blue);
+    -fx-border-color: #8ade5a;
     -fx-border-width: 1px;
     -fx-border-radius: 5px;
     -fx-font-size: 1.2em;
     -fx-font-family: "Segoe UI";
-    -fx-text-fill: #f8f8f8;
+    -fx-text-fill: #8ade5a;
 }
 
 .button:pressed {
