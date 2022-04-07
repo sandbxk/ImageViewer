@@ -16,9 +16,9 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 
-<BorderPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="703.0" prefWidth="1091.0" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dk.easv.ImageViewerWindowController">
+<BorderPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="703.0" prefWidth="1091.0" style="-fx-background-color: #303030;" stylesheets="@style.css" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="dk.easv.ImageViewerWindowController">
     <top>
-        <HBox alignment="CENTER_LEFT" prefHeight="57.0" prefWidth="1091.0" BorderPane.alignment="CENTER">
+        <HBox alignment="CENTER_LEFT" prefHeight="57.0" prefWidth="1091.0" style="-fx-background-color: #404040;" BorderPane.alignment="CENTER">
             <children>
                 <ButtonBar prefHeight="57.0" prefWidth="458.0">
                     <buttons>
@@ -53,7 +53,7 @@
         </BorderPane>
     </center>
    <bottom>
-      <GridPane maxHeight="-Infinity" minHeight="-Infinity" prefHeight="43.0" prefWidth="1091.0" style="-fx-background-color: #303030;" BorderPane.alignment="CENTER">
+      <GridPane maxHeight="-Infinity" minHeight="-Infinity" prefHeight="43.0" prefWidth="1091.0" style="-fx-background-color: #404040;" BorderPane.alignment="CENTER">
          <columnConstraints>
             <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" />
          </columnConstraints>
@@ -110,7 +110,7 @@
       </GridPane>
    </bottom>
    <right>
-      <AnchorPane maxWidth="-Infinity" minWidth="-Infinity" prefHeight="602.0" prefWidth="327.0" BorderPane.alignment="CENTER">
+      <AnchorPane maxWidth="-Infinity" minWidth="-Infinity" prefHeight="602.0" prefWidth="327.0" style="-fx-background-color: #353535;" BorderPane.alignment="CENTER">
          <children>
             <BarChart fx:id="chartColors" layoutX="73.0" layoutY="188.0" prefHeight="571.0" prefWidth="324.0" AnchorPane.bottomAnchor="14.0" AnchorPane.rightAnchor="7.0">
               <xAxis>

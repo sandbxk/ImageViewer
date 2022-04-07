@@ -4,18 +4,15 @@ import javafx.beans.property.ObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.chart.XYChart;
 import javafx.scene.image.Image;
 import javafx.scene.image.PixelReader;
-import javafx.scene.paint.Color;
 
-import java.awt.image.BufferedImage;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicLong;
 
-public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
+public class ColorChartTask extends Task<ObservableList<XYChart.Series<String, Number>>> {
 
     private ObjectProperty<Image> imageProperty;
     private boolean running = true;
@@ -26,7 +23,7 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
     }
 
     @Override
-    protected XYChart.Series<String, Number> call() throws Exception {
+    protected ObservableList<XYChart.Series<String, Number>> call() throws Exception {
             Image currentImage = imageProperty.get();
         while (running) {
             if (imageProperty.get() != currentImage) {
@@ -37,12 +34,20 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
         return null;
     }
 
-    private XYChart.Series<String, Number> getSeriesData(Map<String, Long> colorMap) {
-        //TODO: Separate Series for each color.
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
-        ObservableList<XYChart.Data<String, Number>> colorData = FXCollections.observableArrayList(colorMap.keySet().stream().map(
-                key -> new XYChart.Data<String, Number>(key, colorMap.get(key))).toList());
-        series.setData(colorData);
+    private ObservableList<XYChart.Series<String, Number>> getSeriesData(Map<String, Long> colorMap) {
+        BigInteger totalcount = BigInteger.valueOf(0);
+        for (Long count : colorMap.values()) {
+            totalcount = totalcount.add(BigInteger.valueOf(count));
+        }
+
+
+        ObservableList<XYChart.Series<String, Number>> series = FXCollections.observableArrayList();
+        for (Map.Entry<String, Long> entry : colorMap.entrySet()) {
+            XYChart.Series<String, Number> seriesData = new XYChart.Series<>();
+            seriesData.getData().add(new XYChart.Data<>(entry.getKey(), entry.getValue()));
+            series.add(seriesData);
+        }
+
         return series;
     }
 

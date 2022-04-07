@@ -5,3 +5,56 @@
 .default-color4.chart-bar { -fx-bar-fill: MAGENTA }
 .default-color5.chart-bar { -fx-bar-fill: CYAN }
 .default-color6.chart-bar { -fx-bar-fill: BLACK }
+
+.axis {
+    -fx-font-size: 1.4em;
+    -fx-tick-label-fill: #f8f8f8;
+    -fx-font-family: "Arial";
+    -fx-tick-length: 20;
+    -fx-minor-tick-length: 10;
+}
+
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+
+.axis-label {
+    -fx-font-size: 12;
+    -fx-font-family: "Arial";
+    -fx-font-weight: bold;
+    -fx-text-fill: #f8f8f8;
+}
+
+
+
+.button {
+    -fx-background-color: #303030;
+    -fx-border-color: #f8f8f8;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-font-size: 1.2em;
+    -fx-font-family: "Segoe UI";
+    -fx-text-fill: #f8f8f8;
+
+}
+
+.button:hover, button:hover:pressed {
+    -fx-background-color: #303030;
+    -fx-border-color: linear-gradient(red, green, blue);
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-font-size: 1.2em;
+    -fx-font-family: "Segoe UI";
+    -fx-text-fill: #f8f8f8;
+}
+
+.button:pressed {
+    -fx-background-color: #606060;
+    -fx-border-color: #202020;
+    -fx-border-width: 1px;
+    -fx-border-radius: 5px;
+    -fx-font-size: 1.2em;
+    -fx-font-family: "Segoe UI";
+    -fx-text-fill: #202020;
+
+}

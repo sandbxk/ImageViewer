@@ -56,6 +56,7 @@ public class ImageViewerWindowController implements Initializable
         btnStop.setDisable(true);
 
         slideshowTask = new SlideshowTask(images, delay);
+
         colorChartTask = new ColorChartTask(imageView.imageProperty());
 
 
@@ -91,7 +92,7 @@ public class ImageViewerWindowController implements Initializable
 
         colorChartTask.valueProperty().addListener((observable, oldValue, newValue) -> {
             chartColors.getData().clear();
-            chartColors.getData().add(newValue);
+            chartColors.setData(newValue);
         });
 
         executor.execute(colorChartTask);

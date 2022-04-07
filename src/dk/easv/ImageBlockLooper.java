@@ -66,9 +66,9 @@ public class ImageBlockLooper implements Callable<Map<String, Long>> {
         result.put("Red", red.get());
         result.put("Green", green.get());
         result.put("Blue", blue.get());
-        result.put("Red-Green", redGreen.get());
-        result.put("Red-Blue", redBlue.get());
-        result.put("Green-Blue", greenBlue.get());
+        result.put("Yellow", redGreen.get());
+        result.put("Magenta", redBlue.get());
+        result.put("Cyan", greenBlue.get());
         result.put("Monochrome", monochrome.get());
         return result;
     }
