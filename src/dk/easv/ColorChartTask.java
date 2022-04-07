@@ -46,50 +46,52 @@ public class ColorChartTask extends Task<XYChart.Series<String, Number>> {
         return series;
     }
 
+    /**
+     * Returns a map of colors and their number of occurrences.
+     * Uses 4 threads/callables to speed up the process, and merge the results
+     * of each callable into a single map that is returned.
+     * @param img
+     * @return
+     */
     public Map<String, Long> getColorData(Image img){
-        // Read through the pixels and count the number of occurrences of each color.
-        int threadCount = 16;
+        /*4 threads. Each thread will get a part of the image.
+        Using more threads makes it harder to divide the image properly without lossy double to int conversion, which
+        causes pixel loss and therefore innacuracies in the color readings.   */
+        int threadCount = 4;
 
-        //IDEAS:
-        // https://stackoverflow.com/questions/2190787/dividing-the-image-into-four-equal-parts-in-jai
-        // https://stackoverflow.com/questions/2405898/how-to-split-an-image-into-four-equal-parts-in-java
-        // http://kalanir.blogspot.com/2010/02/how-to-split-image-into-chunks-java.html
-
-
-        //divides the image size with 8 for 8 blocks.
-        //BufferedImage bufferedImage = SwingFXUtils.fromFXImage(img, null);
+        //Divides the image into 4 equal parts
         int width = img.widthProperty().intValue();
         int height = img.heightProperty().intValue();
+        int centerX = Math.round(width/2);
+        int centerY = Math.round(height/2);
 
-        //TODO: Fix lossy double conversion on division - currently loosing pixels.
-        int blockSizeX = Math.round(width / threadCount);
-        int blockSizeY = Math.round(height / threadCount);
+        //The reader for each individual pixel. Reads the color value in the Callable.
         final PixelReader pr = img.getPixelReader();
 
         List<Callable<Map<String, Long>>> runners = new ArrayList<>();
 
-        for (int i = 0; i < threadCount; i++) {
-            ImageBlockLooper callable = new ImageBlockLooper(blockSizeX*i, blockSizeY*i, blockSizeX*(i+1), blockSizeY*(i+1), pr);
-            runners.add(callable);
-        }
+        //Thread for the top left
+        ImageBlockLooper callable1 = new ImageBlockLooper(0, 0, centerX, centerY, pr);
+        runners.add(callable1);
+
+        //Thread for the top right
+        ImageBlockLooper callable2 = new ImageBlockLooper(centerX, 0, width, centerY, pr);
+        runners.add(callable2);
+
+        //Thread for the bottom left
+        ImageBlockLooper callable3 = new ImageBlockLooper(0, centerY, centerX, height, pr);
+        runners.add(callable3);
+
+        //Thread for the bottom right
+        ImageBlockLooper callable4 = new ImageBlockLooper(centerX, centerY, width, height, pr);
+        runners.add(callable4);
 
         ExecutorService executor = Executors.newFixedThreadPool(threadCount);
 
-        Map<String, Long> totalColorResult = new ConcurrentHashMap<>(); //Total result - all results will be merged into this map.
+        //Total result - all results will be merged into this map.
+        Map<String, Long> totalColorResult = new ConcurrentHashMap<>();
 
-
-        try {
-            Map<String, Long> result = executor.submit(runners.get(0)).get();
-            result.forEach((key, value) ->
-                    totalColorResult.merge(key, value, (v1, v2) -> v1 + v2) );
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-
-
-        //The results of each thread is added to the total result.
+        //The results of each thread is added to the total result using Futures from the Callable.
         for (Callable<Map<String, Long>> runner : runners) {
             try {
                 Map<String, Long> result = executor.submit(runner).get();
